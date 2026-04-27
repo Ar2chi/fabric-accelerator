@@ -96,9 +96,9 @@ jobs:
           run: |
             fab exists "${WORKSPACE_NAME}.Workspace/.managedidentities/${WORKSPACE_NAME}.ManagedIdentity" | grep -q true || fab create "${WORKSPACE_NAME}.Workspace/.managedidentities/${WORKSPACE_NAME}.ManagedIdentity"
 
-            workspaceIdentity=$(fab ls "${WORKSPACE_NAME}.Workspace/.managedidentities" -q "[?name=='${WORKSPACE_NAME}.ManagedIdentity'].applicationId | [0]" -f | tr -d '\r\n')
+            workspaceIdentity=$(fab ls "${WORKSPACE_NAME}.Workspace/.managedidentities" -q "[?name=='${WORKSPACE_NAME}.ManagedIdentity'].applicationId | [0]" | tr -d '\r\n')
 
-            fab acl get "${WORKSPACE_NAME}.Workspace" -q "[?principal.servicePrincipalDetails.aadAppId=='${workspaceIdentity}'] | length(@)" -f | grep -q '^[1-9]' \
+            fab acl get "${WORKSPACE_NAME}.Workspace" -q "[?principal.servicePrincipalDetails.aadAppId=='${workspaceIdentity}'] | length(@)" | grep -q '^[1-9]' \
               && echo "Workspace identity already has an ACL in workspace" \
               || fab acl set "${WORKSPACE_NAME}.Workspace" -I "$workspaceIdentity" -R contributor -f
           
