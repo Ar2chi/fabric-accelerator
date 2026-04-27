@@ -91,10 +91,10 @@ jobs:
               fab create $WORKSPACE_NAME.Workspace -P capacityName=$FABRIC_CAPACITY_NAME
               fab acl set $WORKSPACE_NAME.Workspace -I $WORKSPACE_ADMIN_ID -R admin -f
             fi 
+
         # Enable workspace Identity and grant contributor role
         - name: Enable workspace identity and grant contributor role
           run: |
-            set -x
             fab exists "${WORKSPACE_NAME}.Workspace/.managedidentities/${WORKSPACE_NAME}.ManagedIdentity" | grep -q true || fab create "${WORKSPACE_NAME}.Workspace/.managedidentities/${WORKSPACE_NAME}.ManagedIdentity"
 
             wIObjId=$(fab ls "${WORKSPACE_NAME}.Workspace/.managedidentities" -l | grep "${WORKSPACE_NAME}.ManagedIdentity" | awk '{print $2}' | tr -d '\r\n')
@@ -102,7 +102,7 @@ jobs:
             fab acl get "${WORKSPACE_NAME}.Workspace" -q "[?principal.servicePrincipalDetails.aadAppId=='${wIObjId}'] | length(@)" | grep -q '^[1-9]' \
               && echo "Workspace identity already has an ACL in workspace" \
               || fab acl set "${WORKSPACE_NAME}.Workspace" -I "$wIObjId" -R contributor -f
-            set +x
+
         # Delete Eventstream if it exists (TEMP WORKAROUND for issue with existing Eventstream during redeployments)
         - name: Delete Eventstream if it exists
           run: |
