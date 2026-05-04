@@ -34,7 +34,9 @@ jobs:
      NEW_OPTIMIZE_DELTA_TABLES_NOTEBOOK_ID: null
      NEW_L1_TRANSFORM_GENERIC_NOTEBOOK_ID: null
      
-
+    # Design-time IDs captured from the source tenant and kept under version control.
+    # During deployment, these OLD_* IDs are replaced with NEW_* runtime IDs for the target tenant/workspace.
+    # Do not change these values unless you intentionally re-baseline from a newly deployed tenant.
      OLD_FABRIC_CAPACITY_ID: e4eb626a-4082-4143-983d-6fc9284b74cd
      OLD_FABRIC_WORKSPACE_ID: 8d8d00a7-0e8a-4e3b-8c0e-8dcafac7adec
      OLD_FABRIC_WORKSPACE_ID1: 00000000-0000-0000-0000-000000000000
@@ -106,9 +108,8 @@ jobs:
         # Delete Eventstream if it exists (TEMP WORKAROUND for issue with existing Eventstream during redeployments)
         - name: Delete Eventstream if it exists
           run: |
-            set -x
             fab exists "$WORKSPACE_NAME.Workspace/es_fabricEvents.EventStream" | grep -q true && fab rm "$WORKSPACE_NAME.Workspace/es_fabricEvents.EventStream" -f
-            set +x
+
        # Create Folders if they do not exist
         - name: Create folders if they do not exist
           run: |  
@@ -165,23 +166,23 @@ jobs:
 
               fi
         
-        # Create Mirror ASQL database connection if it does not exist
-        - name: Create Mirror ASQL DB Connection if it does not exist
-          run: |
-              MirrorASQLConnExists=$(fab exists .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection | tr -d '[:space:]')
-              echo "MirrorASQLConnExists: $MirrorASQLConnExists"
-              if [ "$MirrorASQLConnExists" != "*true" ]; then
-                server="${{ secrets.WWI_SERVER }}"
-                database="${{ secrets.WWI_DATABASE }}"
-                echo "Creating connection for server: $server and database: $database"
-                fab create .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database,credentialDetails.type=ServicePrincipal,credentialDetails.servicePrincipalClientId=${{ secrets.ACTION_SPN_CLIENTID }},credentialDetails.servicePrincipalSecret=${{ secrets.ACTION_SPN_SECRET }},credentialDetails.tenantid=${{ secrets.TENANT_ID }} 
-                connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id| tr -d '\r')
+        # # Create Mirror ASQL database connection if it does not exist
+        # - name: Create Mirror ASQL DB Connection if it does not exist
+        #   run: |
+        #       MirrorASQLConnExists=$(fab exists .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection | tr -d '[:space:]')
+        #       echo "MirrorASQLConnExists: $MirrorASQLConnExists"
+        #       if [ "$MirrorASQLConnExists" != "*true" ]; then
+        #         server="${{ secrets.WWI_SERVER }}"
+        #         database="${{ secrets.WWI_DATABASE }}"
+        #         echo "Creating connection for server: $server and database: $database"
+        #         fab create .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database,credentialDetails.type=ServicePrincipal,credentialDetails.servicePrincipalClientId=${{ secrets.ACTION_SPN_CLIENTID }},credentialDetails.servicePrincipalSecret=${{ secrets.ACTION_SPN_SECRET }},credentialDetails.tenantid=${{ secrets.TENANT_ID }} 
+        #         connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id| tr -d '\r')
                 
-                rolejson=$(jq -n --arg id "$WORKSPACE_ADMIN_ID" --arg type "${WORKSPACE_ADMIN_TYPE^}" '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')         
-                echo "Assigning role to connection: $rolejson"
-                fab api -X post "connections/$connectionID/roleAssignments" -i "$rolejson" --show_headers
+        #         rolejson=$(jq -n --arg id "$WORKSPACE_ADMIN_ID" --arg type "${WORKSPACE_ADMIN_TYPE^}" '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')         
+        #         echo "Assigning role to connection: $rolejson"
+        #         fab api -X post "connections/$connectionID/roleAssignments" -i "$rolejson" --show_headers
 
-              fi
+        #       fi
 
           # Create Medallion Layers if they do not exist
         - name: Create Medallion Layers if they do not exist
