@@ -179,25 +179,16 @@ jobs:
               fab create .connections/"${WORKSPACE_NAME}-${FABRIC_SQL_DB_NAME}".Connection \
                 -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database
 
-              connectionID=$(fab get .connections/"${WORKSPACE_NAME}-${FABRIC_SQL_DB_NAME}".Connection -q id | tr -d '\r')
-              echo "NEW_CONTROLDB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
-            else
-              connectionID=$(fab get .connections/"${WORKSPACE_NAME}-${FABRIC_SQL_DB_NAME}".Connection -q id | tr -d '\r')
-              echo "NEW_CONTROLDB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
-            fi
-
-            adminRoleJson=$(jq -n \
+               adminRoleJson=$(jq -n \
               --arg id "$WORKSPACE_ADMIN_ID" \
               --arg type "${WORKSPACE_ADMIN_TYPE^}" \
               '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')
+              
+              fab api -X post "connections/$connectionID/roleAssignments" -i "$adminRoleJson" --show_headers || true              
+            fi
 
-            spRoleJson=$(jq -n \
-              --arg id "${{ secrets.ACTION_SPN_CLIENTID }}" \
-              --arg type "ServicePrincipal" \
-              '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')
-
-            fab api -X post "connections/$connectionID/roleAssignments" -i "$adminRoleJson" --show_headers || true
-            fab api -X post "connections/$connectionID/roleAssignments" -i "$spRoleJson" --show_headers || true
+            connectionID=$(fab get .connections/"${WORKSPACE_NAME}-${FABRIC_SQL_DB_NAME}".Connection -q id | tr -d '\r')
+            echo "NEW_CONTROLDB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
 
        # Deploy WWI-mirror Database
         - name: Deploy WWI-mirror Database
@@ -265,26 +256,17 @@ jobs:
               fab create .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection \
                 -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database
 
-              connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id | tr -d '\r')
-            else
-              connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id | tr -d '\r')
-            fi
-
-            echo "NEW_WWI_MIRROR_DB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
-
-            adminRoleJson=$(jq -n \
+              adminRoleJson=$(jq -n \
               --arg id "$WORKSPACE_ADMIN_ID" \
               --arg type "${WORKSPACE_ADMIN_TYPE^}" \
               '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')
 
-            spRoleJson=$(jq -n \
-              --arg id "${{ secrets.ACTION_SPN_CLIENTID }}" \
-              --arg type "ServicePrincipal" \
-              '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')
+              fab api -X post "connections/$connectionID/roleAssignments" -i "$adminRoleJson" --show_headers || true
+            fi
 
-            fab api -X post "connections/$connectionID/roleAssignments" -i "$adminRoleJson" --show_headers || true
-            fab api -X post "connections/$connectionID/roleAssignments" -i "$spRoleJson" --show_headers || true       
-
+            connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id | tr -d '\r')
+            echo "NEW_WWI_MIRROR_DB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
+            
           # Create Medallion Layers if they do not exist
         - name: Create Medallion Layers if they do not exist
           run: |
