@@ -1141,8 +1141,6 @@ jobs:
         - name: Get Gold DW connection string
           shell: pwsh
           run: |
-            $ErrorActionPreference = "Stop"
-
             fab config set encryption_fallback_enabled true
             fab auth login -u "${{ secrets.ACTION_SPN_CLIENTID }}" -p "${{ secrets.ACTION_SPN_SECRET }}" --tenant "${{ secrets.TENANT_ID }}"
 
@@ -1156,3 +1154,19 @@ jobs:
             Write-Output "::add-mask::$ENTRA_CLIENT_SECRET"
             $GOLD_DW_CONNECTION_STRING = "Server=$env:DW_SERVER;Initial Catalog=$env:DW_NAME;Authentication=Microsoft Entra Service Principal;User ID=$ENTRA_CLIENT_ID;Password=$ENTRA_CLIENT_SECRET;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
             echo "GOLD_DW_CONNECTION_STRING=$GOLD_DW_CONNECTION_STRING" >> $GITHUB_ENV
+
+       # Deploy using the dacpac from previous step
+        - name: Deploy ControlDB
+          uses: Azure/sql-action@v2.3
+          with:
+            connection-string: ${{ env.GOLD_DW_CONNECTION_STRING }}
+            path: ${{ github.workspace }}\workspace\warehouse\dw_gold.Warehouse\bin\Release\dw_gold.dacpac
+            action: Publish
+
+      # Logout
+        - name: Logout of Fabric
+          run: fab auth logout
+          
+        - name: Azure Logout
+          run: |
+            az logout            
