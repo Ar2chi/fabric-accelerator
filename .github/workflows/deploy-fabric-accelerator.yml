@@ -1152,8 +1152,7 @@ jobs:
 
             Write-Output "::add-mask::$ENTRA_CLIENT_ID"
             Write-Output "::add-mask::$ENTRA_CLIENT_SECRET"
-            $GOLD_DW_CONNECTION_STRING = "Server=$env:DW_SERVER;Initial Catalog=$env:DW_NAME;Authentication=Microsoft Entra Service Principal;User ID=$ENTRA_CLIENT_ID;Password=$ENTRA_CLIENT_SECRET;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
-            echo "GOLD_DW_CONNECTION_STRING=$GOLD_DW_CONNECTION_STRING" >> $GITHUB_ENV
+            $env:GOLD_DW_CONNECTION_STRING = "Server=$env:DW_SERVER;Initial Catalog=$env:DW_NAME;Authentication=Microsoft Entra Service Principal;User ID=$ENTRA_CLIENT_ID;Password=$ENTRA_CLIENT_SECRET;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
 
        # Deploy using the dacpac from previous step
         - name: Deploy ControlDB
@@ -1166,7 +1165,7 @@ jobs:
       # Logout
         - name: Logout of Fabric
           run: fab auth logout
-          
+
         - name: Azure Logout
           run: |
             az logout            
