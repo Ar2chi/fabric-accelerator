@@ -1174,6 +1174,7 @@ jobs:
             connection-string: ${{ steps.get_golddw_connection_string.outputs.gold_dw_connection_string }}
             path: ${{ github.workspace }}\workspace\warehouse\dw_gold.Warehouse\bin\Release\dw_gold.dacpac
             action: Publish
+            skip-firewall-check: true
 
       # Logout
         - name: Logout of Fabric
