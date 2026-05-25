@@ -248,11 +248,11 @@ jobs:
             MirrorASQLConnExists=$(fab exists .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection | tr -d '[:space:]')
             echo "MirrorASQLConnExists: $MirrorASQLConnExists"
 
-            # if [ "$MirrorASQLConnExists" != "*true" ]; then
-            #   server=$(fab get $WORKSPACE_NAME.Workspace/WideWorldImporters-mirror.MirroredDatabase -q properties.sqlEndpointProperties.connectionString | tr -d '\r')
-            #   database="WideWorldImporters-mirror"
-            #   fab create .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection \
-            #     -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database,credentialDetails.type=ServicePrincipal,credentialDetails.servicePrincipalClientId=${{ secrets.ACTION_SPN_CLIENTID }},credentialDetails.servicePrincipalSecret=${{ secrets.ACTION_SPN_SECRET }},credentialDetails.tenantid=${{ secrets.TENANT_ID }} 
+            if [ "$MirrorASQLConnExists" != "*true" ]; then
+              server=$(fab get $WORKSPACE_NAME.Workspace/WideWorldImporters-mirror.MirroredDatabase -q properties.sqlEndpointProperties.connectionString | tr -d '\r')
+              database="WideWorldImporters-mirror"
+              fab create .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection \
+                -P connectionDetails.creationMethod=SQL,connectionDetails.type=SQL,connectionDetails.parameters.server=$server,connectionDetails.parameters.database=$database,credentialDetails.type=ServicePrincipal,credentialDetails.servicePrincipalClientId=${{ secrets.ACTION_SPN_CLIENTID }},credentialDetails.servicePrincipalSecret=${{ secrets.ACTION_SPN_SECRET }},credentialDetails.tenantid=${{ secrets.TENANT_ID }} 
 
               connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id | tr -d '\r')
               adminRoleJson=$(jq -n \
@@ -261,7 +261,7 @@ jobs:
               '{"principal": {"id": $id, "type": $type}, "role": "Owner"}')
 
               fab api -X post "connections/$connectionID/roleAssignments" -i "$adminRoleJson" --show_headers || true
-            # fi
+            fi
 
             connectionID=$(fab get .connections/"${WORKSPACE_NAME}-WWI-mirror".Connection -q id | tr -d '\r')
             echo "NEW_WWI_MIRROR_DB_CONNECTION_ID=$connectionID" >> $GITHUB_ENV
