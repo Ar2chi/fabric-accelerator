@@ -1194,6 +1194,21 @@ jobs:
         - name: Add msbuild to PATH
           uses: microsoft/setup-msbuild@v3  
 
+        - name: Replace lh_silver with SILVER_LH in Gold DW sources
+          shell: pwsh
+          run: |
+            $warehousePath = Join-Path "${{ github.workspace }}" "workspace\warehouse\dw_gold.Warehouse"
+            $files = Get-ChildItem -Path $warehousePath -Recurse -File |
+              Select-String -Pattern 'lh_silver' -List |
+              Select-Object -ExpandProperty Path
+
+            foreach ($file in $files) {
+              Write-Host "Updating $file"
+              $content = Get-Content $file -Raw
+              $updated = $content -replace 'lh_silver', '${{ env.SILVER_LH }}'
+              Set-Content -Path $file -Value $updated
+            }
+
         # Build the SQL project into a .dacpac using MSBuild (SSDT)
         - name: Build Gold DW dacpac
           shell: pwsh
